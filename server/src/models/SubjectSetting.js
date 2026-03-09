@@ -16,7 +16,7 @@ const subjectSettingSchema = new mongoose.Schema({
   },
   colorId: {
     type: String,
-    default: '1', // Mã màu Google Calendar
+    default: '', // Mã màu Google Calendar, rỗng nghĩa là dùng màu tự động
   },
   reminderMinutes: {
     type: Number,

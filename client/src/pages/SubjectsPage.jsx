@@ -59,17 +59,18 @@ function SubjectsPage() {
   };
 
   const colorOptions = [
-    { id: '1', label: 'Xanh lavender' },
-    { id: '2', label: 'Xanh lá' },
-    { id: '3', label: 'Tím' },
-    { id: '4', label: 'Hồng' },
-    { id: '5', label: 'Vàng' },
-    { id: '6', label: 'Cam' },
-    { id: '7', label: 'Xanh ngọc' },
-    { id: '8', label: 'Xám' },
-    { id: '9', label: 'Xanh đậm' },
-    { id: '10', label: 'Xanh lục' },
-    { id: '11', label: 'Đỏ' },
+    { id: '', label: 'Mặc định (theo Ca)' },
+    { id: '1', label: '1 - Xanh lavender' },
+    { id: '2', label: '2 - Xanh lá' },
+    { id: '3', label: '3 - Tím' },
+    { id: '4', label: '4 - Hồng' },
+    { id: '5', label: '5 - Vàng' },
+    { id: '6', label: '6 - Cam' },
+    { id: '7', label: '7 - Xanh ngọc' },
+    { id: '8', label: '8 - Xám' },
+    { id: '9', label: '9 - Xanh đậm' },
+    { id: '10', label: '10 - Xanh lục' },
+    { id: '11', label: '11 - Đỏ' },
   ];
 
   return (

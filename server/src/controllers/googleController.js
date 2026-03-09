@@ -24,12 +24,18 @@ exports.getAuthUrl = async (req, res) => {
   }
 };
 
-// POST /api/google/callback
+// GET /api/google/callback
 exports.handleCallback = async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, error } = req.query; // Lấy từ query parameters
+    
+    // Nếu Google trả về lỗi (VD người dùng từ chối cấp quyền)
+    if (error) {
+      return res.redirect(`http://localhost:5173/calendar-config?error=${error}`);
+    }
+    
     if (!code) {
-      return res.status(400).json({ message: 'Thiếu mã xác quyền' });
+      return res.redirect('http://localhost:5173/calendar-config?error=missing_code');
     }
 
     const oauth2Client = getOAuth2Client();
@@ -37,16 +43,22 @@ exports.handleCallback = async (req, res) => {
 
     const setting = await Setting.findOne();
     if (!setting) {
-      return res.status(404).json({ message: 'Chưa có cấu hình' });
+      return res.redirect('http://localhost:5173/calendar-config?error=no_settings');
     }
 
+    // Cập nhật cấu hình
     setting.googleConfig.accessToken = tokens.access_token;
-    setting.googleConfig.refreshToken = tokens.refresh_token || setting.googleConfig.refreshToken;
+    setting.googleConfig.isConnected = true;
+    if (tokens.refresh_token) {
+      setting.googleConfig.refreshToken = tokens.refresh_token; 
+    }
     await setting.save();
 
-    res.json({ message: 'Liên kết Google Calendar thành công' });
+    // Redirect về giao diện frontend với thông báo thành công
+    res.redirect('http://localhost:5173/calendar-config?success=1');
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi xử lý callback Google', error: error.message });
+    console.error('Lỗi callback Google:', error);
+    res.redirect('http://localhost:5173/calendar-config?error=internal_error');
   }
 };
 

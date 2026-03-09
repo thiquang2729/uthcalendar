@@ -14,6 +14,17 @@ function CalendarConfigPage() {
 
   useEffect(() => {
     fetchSettings();
+    
+    // Kiểm tra kết quả trả về từ Google Callback
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success')) {
+      setMessage('Liên kết Google Calendar thành công!');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('error')) {
+      const errCode = params.get('error');
+      setMessage(`Lỗi liên kết Google: ${errCode}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const fetchSettings = async () => {
@@ -34,7 +45,8 @@ function CalendarConfigPage() {
   const handleGoogleAuth = async () => {
     try {
       const res = await api.get('/google/auth-url');
-      window.open(res.data.url, '_blank');
+      // Chuyển hướng trong cùng tab để tránh bị block popup và cookie issues
+      window.location.href = res.data.url;
     } catch (err) {
       setMessage('Lỗi tạo URL xác thực: ' + err.message);
     }

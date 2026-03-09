@@ -43,3 +43,16 @@ exports.runSync = async (req, res) => {
     res.status(500).json({ status: 'Thất bại', logLines, error: error.message });
   }
 };
+
+// GET /api/sync/preview?date=2026-03-09
+exports.previewSchedule = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const scheduleData = await scraperService.scrapeSchedule(date);
+    res.json({ success: true, events: scheduleData });
+  } catch (error) {
+    console.error('Lỗi preview lịch học:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
