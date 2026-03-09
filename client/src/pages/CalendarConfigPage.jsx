@@ -138,13 +138,22 @@ function CalendarConfigPage() {
                 <label style={{ display: 'block', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
                   Lịch trình Cron
                 </label>
-                <input
+                <select
                   id="cron-schedule"
                   className="input-field"
-                  placeholder="0 6 * * * (6h sáng mỗi ngày)"
                   value={form.cronSchedule}
                   onChange={(e) => setForm({ ...form, cronSchedule: e.target.value })}
-                />
+                >
+                  <option value="">-- Tắt tự động đồng bộ --</option>
+                  <option value="0 0 * * *">00:00 hằng ngày (Nửa đêm)</option>
+                  <option value="0 1 * * *">01:00 sáng hằng ngày</option>
+                  <option value="0 5 * * *">05:00 sáng hằng ngày</option>
+                  <option value="0 6 * * *">06:00 sáng hằng ngày</option>
+                  <option value="0 7 * * *">07:00 sáng hằng ngày</option>
+                  <option value="0 12 * * *">12:00 trưa hằng ngày</option>
+                  <option value="0 18 * * *">18:00 chiều hằng ngày</option>
+                  <option value="0 21 * * *">21:00 tối hằng ngày</option>
+                </select>
               </div>
 
               <div>

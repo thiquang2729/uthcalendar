@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema({
-  adminPassword: {
-    type: String,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
   },
   uthConfig: {

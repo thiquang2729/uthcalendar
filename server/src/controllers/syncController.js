@@ -6,24 +6,26 @@ const googleCalendarService = require('../services/googleCalendar');
 exports.runSync = async (req, res) => {
   const logLines = [];
   const log = (msg) => logLines.push(`[${new Date().toLocaleTimeString('vi-VN')}] ${msg}`);
+  const userId = req.user;
 
   try {
     log('Bắt đầu tiến trình đồng bộ...');
 
     // Bước 1: Cào dữ liệu từ UTH
     log('Đang đăng nhập vào cổng UTH...');
-    const scheduleData = await scraperService.scrapeSchedule();
+    const scheduleData = await scraperService.scrapeSchedule(null, userId);
     log(`Tìm thấy ${scheduleData.length} môn học`);
 
     // Bước 2: Đồng bộ lên Google Calendar
     log('Đang kết nối Google Calendar...');
-    const result = await googleCalendarService.syncEvents(scheduleData);
+    const result = await googleCalendarService.syncEvents(scheduleData, userId);
     log(`Đã thêm ${result.added} sự kiện mới, cập nhật ${result.updated} sự kiện`);
 
     log('Đồng bộ hoàn tất!');
 
-    // Lưu nhật ký
+    // Lưu nhật ký cho User này
     await SyncLog.create({
+      userId,
       status: 'Thành công',
       eventsAdded: result.added,
       eventsUpdated: result.updated,
@@ -35,6 +37,7 @@ exports.runSync = async (req, res) => {
     log(`LỖI: ${error.message}`);
 
     await SyncLog.create({
+      userId,
       status: 'Thất bại',
       errorMessage: error.message,
       logLines,
@@ -48,7 +51,7 @@ exports.runSync = async (req, res) => {
 exports.previewSchedule = async (req, res) => {
   try {
     const { date } = req.query;
-    const scheduleData = await scraperService.scrapeSchedule(date);
+    const scheduleData = await scraperService.scrapeSchedule(date, req.user);
     res.json({ success: true, events: scheduleData });
   } catch (error) {
     console.error('Lỗi preview lịch học:', error.message);

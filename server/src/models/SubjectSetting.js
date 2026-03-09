@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const subjectSettingSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   subjectCode: {
     type: String,
     required: true,
-    unique: true,
   },
   subjectName: {
     type: String,

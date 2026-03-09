@@ -13,10 +13,12 @@ const getOAuth2Client = () => {
 exports.getAuthUrl = async (req, res) => {
   try {
     const oauth2Client = getOAuth2Client();
+    // Bỏ ID của user hiện tại vào state để lúc google chuyển hướng về còn biết ai đăng nhập
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/calendar'],
       prompt: 'consent',
+      state: req.user, // Add user ID here
     });
     res.json({ url });
   } catch (error) {
@@ -27,7 +29,7 @@ exports.getAuthUrl = async (req, res) => {
 // GET /api/google/callback
 exports.handleCallback = async (req, res) => {
   try {
-    const { code, error } = req.query; // Lấy từ query parameters
+    const { code, error, state } = req.query; // Lấy từ query parameters
     
     // Nếu Google trả về lỗi (VD người dùng từ chối cấp quyền)
     if (error) {
@@ -38,10 +40,14 @@ exports.handleCallback = async (req, res) => {
       return res.redirect('http://localhost:5173/calendar-config?error=missing_code');
     }
 
+    if (!state) {
+        return res.redirect('http://localhost:5173/calendar-config?error=missing_state');
+    }
+
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    const setting = await Setting.findOne();
+    const setting = await Setting.findOne({ userId: state }); // Lấy lại UserId từ state Google trả về
     if (!setting) {
       return res.redirect('http://localhost:5173/calendar-config?error=no_settings');
     }
@@ -65,7 +71,7 @@ exports.handleCallback = async (req, res) => {
 // GET /api/google/calendars
 exports.getCalendars = async (req, res) => {
   try {
-    const setting = await Setting.findOne();
+    const setting = await Setting.findOne({ userId: req.user });
     if (!setting || !setting.googleConfig.accessToken) {
       return res.status(400).json({ message: 'Chưa liên kết tài khoản Google' });
     }

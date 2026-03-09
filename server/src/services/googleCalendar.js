@@ -3,8 +3,8 @@ const Setting = require('../models/Setting');
 const SubjectSetting = require('../models/SubjectSetting');
 const CustomEvent = require('../models/CustomEvent');
 
-const getAuthClient = async () => {
-  const setting = await Setting.findOne();
+const getAuthClient = async (userId) => {
+  const setting = await Setting.findOne({ userId });
   if (!setting || !setting.googleConfig.accessToken) {
     throw new Error('Chưa liên kết tài khoản Google');
   }
@@ -34,18 +34,23 @@ const getAuthClient = async () => {
 /**
  * Đồng bộ sự kiện lên Google Calendar
  * @param {Array} scheduleData - Dữ liệu lịch học đã bóc tách
+ * @param {String} userId - ID của User đang yêu cầu Đồng bộ
  * @returns {Object} { added, updated }
  */
-exports.syncEvents = async (scheduleData) => {
-  const { oauth2Client, calendarId } = await getAuthClient();
+exports.syncEvents = async (scheduleData, userId) => {
+  const { oauth2Client, calendarId } = await getAuthClient(userId);
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
   let added = 0;
   let updated = 0;
 
-  // Lấy danh sách môn bị bỏ qua
-  const ignoredSubjects = await SubjectSetting.find({ isIgnored: true });
-  const ignoredCodes = new Set(ignoredSubjects.map((s) => s.subjectCode));
+  // Lấy cài đặt môn học của User này (để áp dụng màu/nhắc nhở/bỏ qua)
+  const userSubjectsInfo = await SubjectSetting.find({ userId });
+
+  // Lấy danh sách môn bị bỏ qua của user này
+  const ignoredCodes = new Set(
+    userSubjectsInfo.filter(s => s.isIgnored).map(s => s.subjectCode)
+  );
 
   // Lọc bỏ môn bị bỏ qua
   const filteredSchedule = scheduleData.filter(
@@ -131,8 +136,8 @@ exports.syncEvents = async (scheduleData) => {
     }
   }
 
-  // Đồng bộ sự kiện cá nhân
-  const customEvents = await CustomEvent.find({ isSynced: false });
+  // Đồng bộ sự kiện cá nhân của User này
+  const customEvents = await CustomEvent.find({ isSynced: false, userId });
   for (const ce of customEvents) {
     const eventId = getValidEventId('cust', ce._id.toString());
     

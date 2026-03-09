@@ -3,10 +3,10 @@ const CustomEvent = require('../models/CustomEvent');
 // GET /api/events
 exports.getEvents = async (req, res) => {
   try {
-    const events = await CustomEvent.find().sort({ startTime: 1 });
+    const events = await CustomEvent.find({ userId: req.user }).sort({ startTime: 1 });
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: 'Lỗi lấy danh sách sự kiện', error: error.message });
   }
 };
 
@@ -15,19 +15,16 @@ exports.createEvent = async (req, res) => {
   try {
     const { title, description, startTime, endTime } = req.body;
 
-    if (!title || !startTime || !endTime) {
-      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (title, startTime, endTime)' });
-    }
-
-    const event = await CustomEvent.create({
+    const newEvent = await CustomEvent.create({
+      userId: req.user,
       title,
       description,
       startTime,
       endTime,
     });
 
-    res.status(201).json(event);
+    res.status(201).json(newEvent);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: 'Lỗi tạo sự kiện', error: error.message });
   }
 };

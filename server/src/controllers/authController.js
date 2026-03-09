@@ -1,34 +1,78 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 const Setting = require('../models/Setting');
 
-// POST /api/auth/login
-exports.login = async (req, res) => {
+// Tạo token
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+};
+
+// Đăng ký tài khoản
+exports.register = async (req, res) => {
   try {
-    const { password } = req.body;
-    if (!password) {
-      return res.status(400).json({ message: 'Vui lòng nhập mật khẩu' });
+    const { username, password } = req.body;
+    
+    // Kiểm tra user tồn tại
+    const userExists = await User.findOne({ username });
+    if (userExists) {
+      return res.status(400).json({ message: 'Tên đăng nhập đã tồn tại' });
     }
 
-    let setting = await Setting.findOne();
+    // Mã hóa mật khẩu
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Nếu chưa có bản ghi Setting, tạo mới với mật khẩu mặc định
-    if (!setting) {
-      const hashedPassword = await bcrypt.hash('admin', 10);
-      setting = await Setting.create({ adminPassword: hashedPassword });
-    }
-
-    const isMatch = await bcrypt.compare(password, setting.adminPassword);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Mật khẩu không đúng' });
-    }
-
-    const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
+    // Tạo User mới
+    const user = await User.create({
+      username,
+      password: hashedPassword,
     });
 
-    res.json({ token });
+    // Tự động tạo bảng Setting trống (để lưu token Google và UTH) cho User này
+    await Setting.create({ userId: user._id });
+
+    // Trả về token
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+      message: 'Đăng ký thành công',
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: 'Lỗi server khi đăng ký', error: error.message });
+  }
+};
+
+// Đăng nhập
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Tìm user và xác thực
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ message: 'Tên đăng nhập không tồn tại' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Mật khẩu không chính xác' });
+    }
+
+    // Đảm bảo User có Setting, nếu rớt mất thì tạo lại chặn lỗi thủ công
+    const settingExists = await Setting.findOne({ userId: user._id });
+    if (!settingExists) {
+       await Setting.create({ userId: user._id });
+    }
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+      message: 'Đăng nhập thành công',
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server khi đăng nhập', error: error.message });
   }
 };

@@ -11,8 +11,12 @@ const menuItems = [
 function Sidebar() {
   const navigate = useNavigate();
 
+  // Mở rộng phần logout để hiển thị Username
+  const username = localStorage.getItem('username') || 'Sinh viên';
+
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
     navigate('/login');
   };
 
@@ -64,29 +68,63 @@ function Sidebar() {
         ))}
       </nav>
 
-      {/* Logout */}
-      <button
-        onClick={handleLogout}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '10px 12px',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--color-text-muted)',
-          cursor: 'pointer',
-          fontSize: '14px',
-          width: '100%',
-          transition: 'color 0.2s',
-        }}
-        onMouseEnter={(e) => e.target.style.color = 'var(--color-danger)'}
-        onMouseLeave={(e) => e.target.style.color = 'var(--color-text-muted)'}
-      >
-        <span style={{ fontSize: '18px' }}>🚪</span>
-        Đăng xuất
-      </button>
+      {/* User Info & Logout */}
+      <div style={{
+        marginTop: 'auto',
+        padding: '16px 12px',
+        background: 'var(--color-surface)',
+        borderRadius: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'var(--color-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: '14px',
+          }}>
+            {username.charAt(0).toUpperCase()}
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+              {username}
+            </p>
+            <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', margin: 0 }}>Học viên</p>
+          </div>
+        </div>
+        
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px',
+            borderRadius: '6px',
+            border: 'none',
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: 'var(--color-danger)',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 500,
+            width: '100%',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.15)'}
+          onMouseLeave={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+        >
+          <span style={{ fontSize: '14px' }}>🚪</span>
+          Đăng xuất
+        </button>
+      </div>
     </aside>
   );
 }

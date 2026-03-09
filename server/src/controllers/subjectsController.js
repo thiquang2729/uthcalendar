@@ -3,10 +3,10 @@ const SubjectSetting = require('../models/SubjectSetting');
 // GET /api/subjects
 exports.getSubjects = async (req, res) => {
   try {
-    const subjects = await SubjectSetting.find().sort({ subjectCode: 1 });
+    const subjects = await SubjectSetting.find({ userId: req.user }).sort({ createdAt: -1 });
     res.json(subjects);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: 'Lỗi lấy danh sách môn học', error: error.message });
   }
 };
 
@@ -14,11 +14,11 @@ exports.getSubjects = async (req, res) => {
 exports.updateSubject = async (req, res) => {
   try {
     const { code } = req.params;
-    const { isIgnored, colorId, reminderMinutes } = req.body;
+    const updates = req.body;
 
     const subject = await SubjectSetting.findOneAndUpdate(
-      { subjectCode: code },
-      { $set: { isIgnored, colorId, reminderMinutes } },
+      { subjectCode: code, userId: req.user },
+      { $set: updates },
       { new: true }
     );
 
@@ -28,6 +28,6 @@ exports.updateSubject = async (req, res) => {
 
     res.json(subject);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: 'Lỗi cập nhật môn học', error: error.message });
   }
 };

@@ -122,13 +122,8 @@ const transformScheduleData = (rawSchedule) => {
     });
 };
 
-/**
- * Cào dữ liệu lịch học và cập nhật danh sách môn học
- * @param {string} [dateStr] - Ngày cần lấy (mặc định: hôm nay)
- * @returns {Array} Mảng sự kiện đã chuẩn hóa
- */
-exports.scrapeSchedule = async (dateStr) => {
-  const setting = await Setting.findOne();
+exports.scrapeSchedule = async (dateStr, userId) => {
+  const setting = await Setting.findOne({ userId });
   if (!setting) throw new Error('Chưa có cấu hình hệ thống');
 
   const { studentId, password } = setting.uthConfig;
@@ -143,11 +138,35 @@ exports.scrapeSchedule = async (dateStr) => {
   const token = await loginUTH(studentId, decryptedPassword);
 
   // Lấy lịch tuần
-  const date = dateStr || new Date().toISOString().split('T')[0];
-  const rawSchedule = await fetchWeekSchedule(token, date);
+  let events = [];
+  if (dateStr) {
+    // Trưởng hợp Preview (xem trước theo ngày cụ thể)
+    const rawSchedule = await fetchWeekSchedule(token, dateStr);
+    events = transformScheduleData(rawSchedule);
+  } else {
+    // Trường hợp Đồng bộ (không truyền ngày) -> Lấy 2 tuần liên tiếp
+    const today = new Date();
+    const date1 = today.toISOString().split('T')[0];
+    
+    // Tính ngày của tuần tiếp theo (+7 ngày)
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    const date2 = nextWeek.toISOString().split('T')[0];
 
-  // Chuyển đổi dữ liệu
-  const events = transformScheduleData(rawSchedule);
+    // Gọi API 2 lần
+    const rawSchedule1 = await fetchWeekSchedule(token, date1);
+    const rawSchedule2 = await fetchWeekSchedule(token, date2);
+    
+    // Gộp dữ liệu
+    const combinedRaw = [...rawSchedule1, ...rawSchedule2];
+    
+    // Loại bỏ các môn học trùng lặp (trường hợp API UTH trả về danh sách có giao thoa)
+    const uniqueRawMap = new Map();
+    combinedRaw.forEach(item => uniqueRawMap.set(item.id, item));
+    const uniqueRawSchedule = Array.from(uniqueRawMap.values());
+
+    events = transformScheduleData(uniqueRawSchedule);
+  }
 
   // Tự động cập nhật danh sách môn học vào DB
   const uniqueSubjects = new Map();
@@ -159,8 +178,8 @@ exports.scrapeSchedule = async (dateStr) => {
 
   for (const [code, name] of uniqueSubjects) {
     await SubjectSetting.findOneAndUpdate(
-      { subjectCode: code },
-      { $setOnInsert: { subjectCode: code, subjectName: name } },
+      { subjectCode: code, userId },
+      { $setOnInsert: { subjectCode: code, subjectName: name, userId } },
       { upsert: true }
     );
   }
