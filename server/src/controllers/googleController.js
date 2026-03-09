@@ -30,18 +30,19 @@ exports.getAuthUrl = async (req, res) => {
 exports.handleCallback = async (req, res) => {
   try {
     const { code, error, state } = req.query; // Lấy từ query parameters
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     
     // Nếu Google trả về lỗi (VD người dùng từ chối cấp quyền)
     if (error) {
-      return res.redirect(`http://localhost:5173/calendar-config?error=${error}`);
+      return res.redirect(`${clientUrl}/calendar-config?error=${error}`);
     }
     
     if (!code) {
-      return res.redirect('http://localhost:5173/calendar-config?error=missing_code');
+      return res.redirect(`${clientUrl}/calendar-config?error=missing_code`);
     }
 
     if (!state) {
-        return res.redirect('http://localhost:5173/calendar-config?error=missing_state');
+        return res.redirect(`${clientUrl}/calendar-config?error=missing_state`);
     }
 
     const oauth2Client = getOAuth2Client();
@@ -49,7 +50,7 @@ exports.handleCallback = async (req, res) => {
 
     const setting = await Setting.findOne({ userId: state }); // Lấy lại UserId từ state Google trả về
     if (!setting) {
-      return res.redirect('http://localhost:5173/calendar-config?error=no_settings');
+      return res.redirect(`${clientUrl}/calendar-config?error=no_settings`);
     }
 
     // Cập nhật cấu hình
@@ -61,10 +62,11 @@ exports.handleCallback = async (req, res) => {
     await setting.save();
 
     // Redirect về giao diện frontend với thông báo thành công
-    res.redirect('http://localhost:5173/calendar-config?success=1');
+    res.redirect(`${clientUrl}/calendar-config?success=1`);
   } catch (error) {
     console.error('Lỗi callback Google:', error);
-    res.redirect('http://localhost:5173/calendar-config?error=internal_error');
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(`${clientUrl}/calendar-config?error=internal_error`);
   }
 };
 
