@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const scheduler = require('./services/scheduler');
@@ -30,7 +31,27 @@ app.use('/api/logs', logsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', time: new Date().toLocaleString('vi-VN') });
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = dbState === 1 ? 'Connected' : 'Disconnected';
+  
+  const healthData = {
+    status: dbState === 1 ? 'OK' : 'Error',
+    message: 'Backend API is running',
+    timestamp: Date.now(),
+    time: new Date().toLocaleString('vi-VN'),
+    uptime: process.uptime(),
+    database: {
+      status: dbStatus,
+      state: dbState // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+    },
+    memoryUsage: process.memoryUsage()
+  };
+
+  if (dbState !== 1) {
+    return res.status(503).json(healthData);
+  }
+
+  res.status(200).json(healthData);
 });
 
 // Khởi động server

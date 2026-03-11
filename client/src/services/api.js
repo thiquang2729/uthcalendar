@@ -25,4 +25,9 @@ api.interceptors.response.use(
   }
 );
 
+export const checkHealth = async () => {
+  const response = await api.get('/health');
+  return response.data;
+};
+
 export default api;
