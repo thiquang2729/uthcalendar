@@ -1,5 +1,6 @@
 const Setting = require('../models/Setting');
 const bcrypt = require('bcryptjs');
+const scheduler = require('../services/scheduler');
 
 // GET /api/settings
 exports.getSettings = async (req, res) => {
@@ -57,6 +58,12 @@ exports.updateSettings = async (req, res) => {
     }
 
     await setting.save();
+
+    // Reload scheduler để áp dụng lịch cron mới (nếu automationConfig thay đổi)
+    if (automationConfig) {
+      await scheduler.startScheduler();
+    }
+
     res.json({ message: 'Cập nhật thành công' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi cập nhật cấu hình', error: error.message });
